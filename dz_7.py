@@ -11,10 +11,10 @@ class Field:
     
 class Name(Field):
     def __init__(self, value):
-        if value[0].isupper():
-            self.value = value
-        else:
-            raise ValueError("Incorect Name")
+        # if value[0].isupper():
+        self.value = value
+        # else:
+        #     raise ValueError("Incorect Name")
 class Phone(Field):
     def __init__(self, value):
         if len(value) == 10:
@@ -25,11 +25,11 @@ class Phone(Field):
 class Birthday(Field):
     def __init__(self, value):
         try:
-            self.value = dtdt.strptime(value, "%Y-%m-%d").date()  # Додайте перевірку коректності даних
+            self.value = dtdt.strptime(value, "%d.%m.%Y").date()  # Додайте перевірку коректності даних
             # та перетворіть рядок на об'єкт datetime
         except ValueError:
             raise ValueError("Invalid date format. Use DD.MM.YYYY")
- 
+
 class Record:
     def __init__(self, name):
         self.name = Name(name)
@@ -69,7 +69,12 @@ class AddressBook(UserDict):
     def find(self, name):
         for names, record in self.data.items():
             if name in names:
-                return self.data[name]
+                return record
+    
+    def find_birthday(self, name):
+        for names, record in self.data.items():
+            if name in names:
+                return f"Contact name:{name}, birthday: {record.birthday.value.strftime("%d.%m.%Y")}"
             
     def delete(self, name):
         user = self.find(name)
@@ -78,28 +83,35 @@ class AddressBook(UserDict):
     def get_upcoming_birthdays(self):
         now = dtdt.today().date() #поточний час
         birthday = []
-        for user in self.data:
-            date_user = user[2] 
-            date_user = str(now.year) + date_user[4: ]
-            date_user = dtdt.strptime(date_user, "%Y-%m-%d").date() #парсинг дати
+        for name, record in self.data.items():
+            date_user = record.birthday.value
             week_day = date_user.isoweekday()
-            difference_day = (date_user - now).days
-            if 1 < difference_day < 7 :
+            difference_day = (date_user.day - now.day)
+            if 1 <= difference_day < 7 :
                 if difference_day < 6 :
-                    birthday.append({"name": user["name"], "birthday":date_user.strftime("%Y-%m-%d")})
+                    birthday.append({"name": name, "birthday":date_user.strftime("%d.%m.%Y")})
                 else:
                     if difference_day == 7:
-                        birthday.append({"name": user["name"], "birthday":(date_user + dt.timedelta(days = 1)).strftime("%Y-%m-%d")})
+                        birthday.append({"name": name, "birthday":(date_user + dt.timedelta(days = 1)).strftime("%d.%m.%Y")})
                     elif difference_day == 6:
-                        birthday.append({"name": user["name"], "birthday":(date_user + dt.timedelta(days = 2)).strftime("%Y-%m-%d")})
+                        birthday.append({"name": name, "birthday":(date_user + dt.timedelta(days = 2)).strftime("%d.%m.%Y")})
         return birthday
+
 
 def parse_input(user_input):
     name, *args = user_input.split()
     name = name.strip().lower()
     return name, *args
 
+def input_error(func):
+    def inner(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except ValueError:
+            return "Give me name and phone please."  
+    return inner
 
+@input_error
 def add_contact(args, book: AddressBook):
     name, phone, *_ = args
     record = book.find(name)
@@ -112,6 +124,7 @@ def add_contact(args, book: AddressBook):
         record.add_phone(phone)
     return message
 
+@input_error
 def change_contact(args, book: AddressBook):
     name, old_phone, new_phone, *_ = args
     name_phone = book.find(name)
@@ -119,15 +132,17 @@ def change_contact(args, book: AddressBook):
     message = "Number changed."
     return message
 
+@input_error
 def show_phone(args, book: AddressBook):
     name, *_ = args
     return book.find(name)
 
+@input_error
 def show_all(book: AddressBook):
     for name, record in book.data.items():
         print(record)
-    pass
 
+@input_error
 def add_birthday(args, book: AddressBook):
     name, birthday, *_ = args
     record = book.find(name)
@@ -139,10 +154,12 @@ def add_birthday(args, book: AddressBook):
     record.add_birthday(birthday)
     return message
 
+@input_error
 def show_birthday(args, book: AddressBook):
     name, *_ = args
-    return book.find(name)
+    return book.find_birthday(name)
 
+@input_error
 def birthdays(book: AddressBook):
     return book.get_upcoming_birthdays()
 
@@ -178,38 +195,3 @@ def main():
 if __name__ == "__main__":
     main()
     
-# # Створення запису для John
-# john_record = Record("John")
-# john_record.add_phone("1234567890")
-# john_record.add_phone("5555555555")
-     
-# # Створення нової адресної книги
-# book = AddressBook()
-
-# # Додавання запису John до адресної книги               
-# book.add_record(john_record)
-    
-#     # Створення та додавання нового запису для Jane
-# jane_record = Record("Jane")
-# jane_record.add_phone("9876543210")
-# book.add_record(jane_record)
-
-#     # Виведення всіх записів у книзі
-# # for name, record in book.data.items():
-# #     print(record)
-
-
-# #     # Знаходження та редагування телефону для John
-# john = book.find("John")
-# john.edit_phone("1234567890", "1112223333")   
-
-# print(john)  # Виведення: Contact name: John, phones: 1112223333; 5555555555
-
-#      # Пошук конкретного телефону у записі John
-# found_phone = john.find_phone("5555555555")
-# print(f"{john.name}: {found_phone}")  # Виведення: 5555555555
-
-#    # Видалення запису Jane
-# book.delete("Jane")
-
-
