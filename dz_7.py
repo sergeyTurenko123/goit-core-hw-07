@@ -15,9 +15,10 @@ class Name(Field):
         self.value = value
         # else:
         #     raise ValueError("Incorect Name")
+
 class Phone(Field):
     def __init__(self, value):
-        if len(value) == 10:
+        if int(value) == float(value) and 9 < len(value) < 12:
             self.value = value
         else:
             raise ValueError ("Incorect Phone")
@@ -135,6 +136,7 @@ def change_contact(args, book: AddressBook):
 @input_error
 def show_phone(args, book: AddressBook):
     name, *_ = args
+
     return book.find(name)
 
 @input_error
