@@ -18,7 +18,7 @@ class Name(Field):
 
 class Phone(Field):
     def __init__(self, value):
-        if int(value) == float(value) and 9 < len(value) < 12:
+        if  int(value) == float(value) and len(value) == 10:
             self.value = value
         else:
             raise ValueError ("Incorect Phone")
